@@ -62,7 +62,7 @@ jobs:
         run: |
           sudo apt install libclang-dev
 
-          cargo binstall --no-confirm cargo-spellcheck --target x86_64-unknown-linux-gnu --bin-dir "{ bin }" --pkg-fmt bin --verbose
+          cargo binstall --no-confirm cargo-spellcheck --target x86_64-unknown-linux-gnu --pkg-url "https://github.com/drahnr/cargo-spellcheck/releases/download/v{ version }/{ name }-v{ version }-{ target }" --pkg-fmt bin
 
       - name: Make sure dictionary words are sorted and unique
         shell: bash
