@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint
+    name: Spellcheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
