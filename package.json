@@ -1,37 +1,35 @@
 {
-  "name": "rust-end-to-end-application",
+  "name": "rust-seed",
   "version": "0.0.0-development",
   "description": "It's written in Rust!",
   "main": "src/main.rs",
   "scripts": {
-    "prettier": "prettier --write .",
+    "format": "prettier --write .",
     "release": "semantic-release"
   },
   "engines": {
-    "node": ">=20.9.0",
-    "npm": ">=10.2.4"
+    "node": ">=22.11.0",
+    "npm": ">=10.9.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kristof-mattei/rust-end-to-end-application.git"
+    "url": "https://github.com/kristof-mattei/rust-seed.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kristof-mattei/rust-end-to-end-application/issues"
+    "url": "https://github.com/kristof-mattei/rust-seed/issues"
   },
-  "homepage": "https://github.com/kristof-mattei/rust-end-to-end-application#readme",
+  "homepage": "https://github.com/kristof-mattei/rust-seed#readme",
   "devDependencies": {
     "@actions/tool-cache": "2.0.1",
     "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/commit-analyzer": "11.1.0",
-    "@semantic-release/github": "9.2.3",
-    "@semantic-release/release-notes-generator": "12.1.0",
-    "conventional-changelog-conventionalcommits": "7.0.2",
-    "prettier": "3.1.0",
-    "semantic-release": "22.0.8",
-    "semver": "7.5.4",
-    "serialize-error": "11.0.3"
+    "@semantic-release/commit-analyzer": "13.0.0",
+    "@semantic-release/github": "11.0.0",
+    "@semantic-release/release-notes-generator": "14.0.1",
+    "conventional-changelog-conventionalcommits": "8.0.0",
+    "prettier": "3.3.3",
+    "semantic-release": "24.2.0"
   },
   "publishConfig": {
     "access": "restricted"
