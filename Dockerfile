@@ -1,23 +1,36 @@
-FROM --platform=$BUILDPLATFORM rust:1.82.0@sha256:33a0ea4769482be860174e1139c457bdcb2a236a988580a28c3a48824cbc17d6 AS builder
+FROM --platform=${BUILDPLATFORM} rust:1.83.0@sha256:df1ab82477dacdfc420b69e92659dc2ea89e9bbdf982d999985324bc031d1ada AS rust-base
 
-ARG TARGET=x86_64-unknown-linux-musl
 ARG APPLICATION_NAME
 
-RUN rustup target add ${TARGET}
-
-RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+    && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' >/etc/apt/apt.conf.d/keep-cache
 
 # borrowed (Ba Dum Tss!) from
 # https://github.com/pablodeymo/rust-musl-builder/blob/7a7ea3e909b1ef00c177d9eeac32d8c9d7d6a08c/Dockerfile#L48-L49
-RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-    dpkg --add-architecture arm64 && \
+RUN --mount=type=cache,id=apt-cache-amd64,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib-amd64,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get --no-install-recommends install -y \
     build-essential \
     musl-dev \
-    musl-tools \
+    musl-tools
+
+FROM rust-base AS rust-linux-amd64
+ARG TARGET=x86_64-unknown-linux-musl
+
+FROM rust-base AS rust-linux-arm64
+ARG TARGET=aarch64-unknown-linux-musl
+RUN --mount=type=cache,id=apt-cache-arm64,from=rust-base,source=/var/cache/apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib-arm64,from=rust-base,source=/var/lib/apt,target=/var/lib/apt,sharing=locked \
+    dpkg --add-architecture arm64 && \
+    apt-get update && \
+    apt-get --no-install-recommends install -y \
     libc6-dev-arm64-cross \
     gcc-aarch64-linux-gnu
+
+FROM rust-${TARGETPLATFORM//\//-} AS rust-cargo-build
+
+RUN rustup target add ${TARGET} && rustup component add clippy rustfmt
 
 # The following block
 # creates an empty app, and we copy in Cargo.toml and Cargo.lock as they represent our dependencies
@@ -28,17 +41,29 @@ RUN cargo new ${APPLICATION_NAME}
 WORKDIR /build/${APPLICATION_NAME}
 COPY .cargo ./.cargo
 COPY Cargo.toml Cargo.lock ./
-RUN --mount=type=cache,id=cargo-dependencies,target=/build/${APPLICATION_NAME}/target \
+
+RUN --mount=type=cache,target=/build/${APPLICATION_NAME}/target \
+    --mount=type=cache,id=cargo-git,target=/usr/local/cargo/git/db,sharing=locked \
+    --mount=type=cache,id=cargo-registery,target=/usr/local/cargo/registry/,sharing=locked \
     cargo build --release --target ${TARGET}
+
+FROM rust-cargo-build AS rust-build
+
+WORKDIR /build/${APPLICATION_NAME}
 
 # now we copy in the source which is more prone to changes and build it
 COPY src ./src
 
+# ensure cargo picks up on the change
+RUN touch ./src/main.rs
+
 # --release not needed, it is implied with install
-RUN --mount=type=cache,id=full-build,target=/build/${APPLICATION_NAME}/target \
+RUN --mount=type=cache,target=/build/${APPLICATION_NAME}/target \
+    --mount=type=cache,id=cargo-git,target=/usr/local/cargo/git/db,sharing=locked \
+    --mount=type=cache,id=cargo-registery,target=/usr/local/cargo/registry/,sharing=locked \
     cargo install --path . --target ${TARGET} --root /output
 
-FROM alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d
+FROM alpine:3.21.0@sha256:21dc6063fd678b478f57c0e13f47560d0ea4eeba26dfc947b2a4f81f686b9f45
 
 ARG APPLICATION_NAME
 
@@ -46,7 +71,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 WORKDIR /app
-COPY --from=builder /output/bin/${APPLICATION_NAME} /app/entrypoint
+
+COPY --from=rust-build /output/bin/* /app/entrypoint
 
 ENV RUST_BACKTRACE=full
 ENTRYPOINT ["/app/entrypoint"]

@@ -3,7 +3,7 @@ name = "rust-seed"
 # don't change this, it's updated before an actual build by update-version.sh
 version = "0.0.0-development"
 edition = "2021"
-rust-version = "1.82.0"
+rust-version = "1.83.0"
 authors = ["Kristof Mattei"]
 description = "Rust seed application"
 license-file = "LICENSE"
@@ -47,5 +47,5 @@ color-eyre = "0.6.3"
 # BUT that means that we need to include openssl
 # Documentation on the syntax:
 # https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#platform-specific-dependencies
-[target.'cfg(all(target_arch = "x86_64", target_os="linux", target_env="musl"))'.dependencies]
+[target.'cfg(all(any(target_arch="x86_64", target_arch="aarch64"), target_os="linux", target_env="musl"))'.dependencies]
 # openssl = { version = "0.10.36", features = ["vendored"] }
