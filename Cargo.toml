@@ -50,6 +50,9 @@ color-eyre = "0.6.3"
 # serde_yaml = "0.8.21"
 # clap = { version = "3.0.14", features = ["derive"] }
 
+[dev-dependencies]
+coverage-helper = "0.2.0"
+
 # We compile the Docker container with musl to get a static library. Smaller, faster.
 # BUT that means that we need to include openssl
 # Documentation on the syntax:
